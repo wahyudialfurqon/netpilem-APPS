@@ -1,7 +1,8 @@
 import 'dart:core';
 
+import 'package:Netpilem/models/movie.dart';
 import 'package:flutter/material.dart';
-import 'package:pilem/models/movie.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DetailScreens extends StatefulWidget {
@@ -73,7 +74,7 @@ class _DetailScreensState extends State<DetailScreens> {
       style: TextStyle(
         fontSize: 25,
         fontWeight: FontWeight.bold,
-        color: Colors.red
+        color: const Color.fromARGB(255, 255, 17, 0)
       ),),
       centerTitle: true,
       backgroundColor: Colors.black,
@@ -101,7 +102,7 @@ class _DetailScreensState extends State<DetailScreens> {
                     child: IconButton(
                       icon: Icon(
                         _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: Colors.red,
+                        color: const Color.fromARGB(255, 255, 17, 0),
                         size: 40,
                       ),
                       onPressed: _toggleFavorite,

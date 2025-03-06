@@ -1,8 +1,10 @@
+import 'package:Netpilem/screens/detail_screen.dart';
+import 'package:Netpilem/screens/favorite_screen.dart';
+import 'package:Netpilem/screens/home_screen.dart';
+import 'package:Netpilem/screens/profile_screen.dart';
+import 'package:Netpilem/screens/search_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:pilem/screens/detail_screen.dart';
-import 'package:pilem/screens/favorite_screen.dart';
-import 'package:pilem/screens/home_screen.dart';
-import 'package:pilem/screens/search_screen.dart';
+
 
 Future<void> main() async {
    WidgetsFlutterBinding.ensureInitialized(); 
@@ -17,10 +19,15 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      initialRoute: '/splash',
-      routes: {
-        '/splash': (context) => const SplashScreen(),
-      },
+      theme: ThemeData(
+        scaffoldBackgroundColor: Colors.black,
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.black,
+          selectedItemColor: Colors.red,
+          unselectedItemColor: Colors.grey
+        )
+      ),
+      home: SplashScreen(),
     );
   }
 }
@@ -50,12 +57,13 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: _screen[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: Colors.black,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: Colors.red,
+        selectedItemColor: const Color.fromARGB(255, 255, 17, 0),
         unselectedItemColor: Colors.grey,
         items: [
           BottomNavigationBarItem(icon:
