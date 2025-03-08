@@ -30,13 +30,26 @@ class SharedPrefHelper {
     await _preferences?.remove('favorite_movies');
   }
 
+  static Future<void> clearAllSaves() async {
+    _preferences = await SharedPreferences.getInstance();
+    List<String>? movieList = _preferences?.getStringList('saved_movies');
+
+    if (movieList != null) {
+      for (var id in movieList) {
+        await _preferences?.remove('save_$id');
+      }
+    }
+
+    // Hapus daftar utama saved_movies
+    await _preferences?.remove('saved_movies');
+  }
+
   static Future<void> init() async {
     _preferences = await SharedPreferences.getInstance();
   }
 
   static Future<void> setFavoriteStatus(int movieId, bool isFavorite) async {
     await _preferences?.setBool('favorite_$movieId', isFavorite);
-    // Simpan ulang daftar favorit ke SharedPreferences
     List<int> favoriteMovies = getAllFavoriteMovies();
     if (isFavorite) {
       if (!favoriteMovies.contains(movieId)) {
@@ -46,7 +59,6 @@ class SharedPrefHelper {
       favoriteMovies.remove(movieId);
     }
 
-    // Jika tidak ada film favorit, hapus key-nya
     if (favoriteMovies.isEmpty) {
       await _preferences?.remove('favorite_movies');
     } else {
@@ -65,14 +77,48 @@ class SharedPrefHelper {
     List<String>? movieList = _preferences?.getStringList('favorite_movies');
     return movieList?.map(int.parse).toList() ?? [];
   }
+
+  // === DUPLIKASI LOGIC UNTUK SAVE ===
+  static Future<void> setSaveStatus(int movieId, bool isSaved) async {
+    await _preferences?.setBool('save_$movieId', isSaved);
+    List<int> savedMovies = getAllSavedMovies();
+    if (isSaved) {
+      if (!savedMovies.contains(movieId)) {
+        savedMovies.add(movieId);
+      }
+    } else {
+      savedMovies.remove(movieId);
+    }
+
+    if (savedMovies.isEmpty) {
+      await _preferences?.remove('saved_movies');
+    } else {
+      await _preferences?.setStringList(
+        'saved_movies',
+        savedMovies.map((id) => id.toString()).toList(),
+      );
+    }
+  }
+
+  static bool getSaveStatus(int movieId) {
+    return _preferences?.getBool('save_$movieId') ?? false;
+  }
+
+  static List<int> getAllSavedMovies() {
+    List<String>? movieList = _preferences?.getStringList('saved_movies');
+    return movieList?.map(int.parse).toList() ?? [];
+  }
 }
 
 class _DetailScreensState extends State<DetailScreens> {
   bool _isFavorite = false;
+  bool _isSave = false;
+  bool isOpened = true;
 
   void initState() {
     super.initState();
     _loadFavoriteStatus();
+    _loadSaveStatus();
   }
 
   void _loadFavoriteStatus() async {
@@ -80,6 +126,13 @@ class _DetailScreensState extends State<DetailScreens> {
     bool status = SharedPrefHelper.getFavoriteStatus(widget.movie.id);
     setState(() {
       _isFavorite = status;
+    });
+  }
+   void _loadSaveStatus() async {
+    await SharedPrefHelper.init();
+    bool status = SharedPrefHelper.getSaveStatus(widget.movie.id);
+    setState(() {
+      _isSave = status;
     });
   }
 
@@ -90,10 +143,18 @@ class _DetailScreensState extends State<DetailScreens> {
     await SharedPrefHelper.setFavoriteStatus(widget.movie.id, _isFavorite);
   }
 
+  Future<void> _toggleSave() async {
+    setState(() {
+      _isSave = !_isSave;
+    });
+    await SharedPrefHelper.setSaveStatus(widget.movie.id, _isSave);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loadFavoriteStatus(); 
+    _loadFavoriteStatus();
+    _loadSaveStatus();
   }
 
   @override
@@ -135,113 +196,188 @@ class _DetailScreensState extends State<DetailScreens> {
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Stack(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(top: 20),
+                        child: Image.network(
+                          'https://image.tmdb.org/t/p/w500${widget.movie.backdropPath}',
+                          height: 300,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   Padding(
-                    padding: EdgeInsets.only(top: 20),
-                    child: Image.network(
-                      'https://image.tmdb.org/t/p/w500${widget.movie.backdropPath}',
-                      height: 300,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          children: [
+                            Text(
+                              'Release Date',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.date_range,
+                                  color: const Color.fromARGB(255, 255, 17, 0),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  widget.movie.releaseDate,
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Column(
+                          children: [
+                            Text(
+                              'Vote Average',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(Icons.star, color: Colors.amber),
+                                const SizedBox(width: 4),
+                                Text(
+                                  widget.movie.voteAverage.toString(),
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  Positioned(
-                    bottom: 10,
-                    right: 10,
-                    child: IconButton(
-                      icon: Icon(
-                        _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: const Color.fromARGB(255, 255, 17, 0),
-                        size: 40,
-                      ),
-                      onPressed: _toggleFavorite,
+                  const SizedBox(height: 16),
+                  Text(
+                    'Overview',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    widget.movie.overview,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.white),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      children: [
-                        Text(
-                          'Release Date',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.date_range,
-                              color: const Color.fromARGB(255, 255, 17, 0),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              widget.movie.releaseDate,
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Column(
-                      children: [
-                        Text(
-                          'Vote Average',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(Icons.star, color: Colors.amber),
-                            const SizedBox(width: 4),
-                            Text(
-                              widget.movie.voteAverage.toString(),
-                              style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Overview',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                widget.movie.overview,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.white),
-              ),
-            ],
+            ),
           ),
+        ],
+      ),
+      floatingActionButton: Transform.translate(
+        offset: Offset(0, -20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (isOpened) ...[
+              FloatingActionButton(
+                onPressed: _toggleFavorite, //
+                backgroundColor: Colors.transparent, // Warna background FAB
+                child: Icon(
+                  _isFavorite ? Icons.favorite : Icons.favorite_border,
+                  color:
+                      _isFavorite
+                          ? const Color.fromARGB(
+                            255,
+                            255,
+                            0,
+                            0,
+                          ) // Merah jika favorit
+                          : const Color.fromARGB(
+                            255,
+                            255,
+                            255,
+                            255,
+                          ), // Putih jika tidak
+                  size: 25,
+                ),
+              ),
+              const SizedBox(height: 10), // Spasi antar tombol
+              FloatingActionButton(
+                onPressed: _toggleSave, //
+                backgroundColor: Colors.transparent, // Warna background FAB
+                child: Icon(
+                  _isSave ? Icons.bookmark : Icons.bookmark_border,
+                  color:
+                      _isSave
+                          ? const Color.fromARGB(
+                            255,
+                            255,
+                            0,
+                            0,
+                          ) // Merah jika favorit
+                          : const Color.fromARGB(
+                            255,
+                            255,
+                            255,
+                            255,
+                          ), // Putih jika tidak
+                  size: 25,
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            FloatingActionButton(
+              onPressed: () {
+                setState(() {
+                  isOpened = !isOpened;
+                });
+              },
+              backgroundColor: Colors.transparent,
+              child: AnimatedSwitcher(
+                duration: Duration(milliseconds: 300),
+                transitionBuilder:
+                    (child, animation) =>
+                        RotationTransition(turns: animation, child: child),
+                child:
+                    isOpened
+                        ? Icon(
+                          Icons.close,
+                          key: ValueKey('close'),
+                          color: const Color.fromARGB(255, 255, 17, 0),
+                        )
+                        : Icon(
+                          Icons.menu,
+                          key: ValueKey('menu'),
+                          color: const Color.fromARGB(255, 255, 255, 255),
+                        ),
+              ),
+            ),
+          ],
         ),
       ),
     );

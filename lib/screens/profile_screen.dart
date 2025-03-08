@@ -1,6 +1,7 @@
 import 'package:Netpilem/models/movie.dart';
 import 'package:Netpilem/screens/detail_screen.dart';
 import 'package:Netpilem/screens/widgets/favorite_grid.dart';
+import 'package:Netpilem/screens/widgets/save_grid.dart';
 import 'package:Netpilem/services/api_services.dart';
 import 'package:flutter/material.dart';
 
@@ -13,18 +14,22 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   List<Movie> favoriteMovies = [];
+  List<Movie> saveMovies = [];
   final ApiServices apiServices = ApiServices();
   Map<int, bool> favoriteStatus = {};
+  Map<int, bool> saveStatus = {};
   bool isFavoriteGrid = false;
   bool isSaveGrid = false;
   bool isHistoryGrid = false;
   bool _isFavorite = false;
+  bool _isSave = false;
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
     _loadFavoriteMovies();
+    _loadSaveMovies();
     isHistoryGrid = true;
   }
 
@@ -36,6 +41,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     });
     await SharedPrefHelper.setFavoriteStatus(movieId, favoriteStatus[movieId]!);
+  }
+
+  Future<void> _toggleSave(int movieId) async {
+    setState(() {
+      saveStatus[movieId] = !(saveStatus[movieId] ?? false);
+      if (!saveStatus[movieId]!) {
+        saveMovies.removeWhere((movie) => movie.id == movieId);
+      }
+    });
+    await SharedPrefHelper.setSaveStatus(movieId, saveStatus[movieId]!);
   }
 
   Future<void> _loadFavoriteMovies() async {
@@ -64,6 +79,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  Future<void> _loadSaveMovies() async {
+    await SharedPrefHelper.init();
+    List<int> saveIds = await SharedPrefHelper.getAllSavedMovies();
+    if (saveIds.isEmpty) {
+      setState(() {
+        _isSave = false;
+        saveMovies = [];
+      });
+      return;
+    }
+    List<Map<String, dynamic>> movieData =
+        await apiServices.getAllMovie(); // Ambil semua film dari API
+    List<Movie> movies =
+        movieData
+            .map((json) => Movie.fromJson(json))
+            .toList(); // Ubah data API menjadi list Movie
+    List<Movie> saveList =
+        movies
+            .where((movie) => saveIds.contains(movie.id))
+            .toList(); // Filter hanya yang ada di daftar favorit
+
+    setState(() {
+      saveMovies = saveList;
+    });
+  }
+
   void _setActiveGrid(String gridType) {
     setState(() {
       isHistoryGrid = gridType == "history";
@@ -73,18 +114,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _clearAllMovies() async {
-    await SharedPrefHelper.clearAllFavorites();
-    setState(() {
-      _isFavorite = false;
-      favoriteMovies.clear(); // Kosongkan daftar favorit di tampilan
-      favoriteStatus.clear(); // Bersihkan status favorit
-    });
-    await Future.delayed(Duration(milliseconds: 100));
-    for (var key in favoriteStatus.keys) {
-      await SharedPrefHelper.setFavoriteStatus(key, false);
+    if (isFavoriteGrid) {
+      await SharedPrefHelper.clearAllFavorites();
+      setState(() {
+        _isFavorite = false;
+        favoriteMovies.clear();
+        favoriteStatus.clear();
+      });
+      await Future.delayed(Duration(milliseconds: 100));
+      for (var key in favoriteStatus.keys) {
+        await SharedPrefHelper.setFavoriteStatus(key, false);
+      }
+      _loadFavoriteMovies();
+    } else if (isSaveGrid) {
+      await SharedPrefHelper.clearAllSaves();
+      setState(() {
+        _isSave = false;
+        saveMovies.clear();
+        saveStatus.clear();
+      });
+      await Future.delayed(Duration(milliseconds: 100));
+      for (var key in saveStatus.keys) {
+        await SharedPrefHelper.setSaveStatus(key, false);
+      }
+      _loadSaveMovies();
     }
-
-    _loadFavoriteMovies(); // Reload daftar favorit
   }
 
   @override
@@ -300,10 +354,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onToggleFavorite: _toggleFavorite,
                   )
                 else if (isSaveGrid)
-                  FavoriteGrid(
-                    favoriteMovies: favoriteMovies,
-                    favoriteStatus: favoriteStatus,
-                    onToggleFavorite: _toggleFavorite,
+                  SaveGrid(
+                    saveMovies: saveMovies,
+                    saveStatus: saveStatus,
+                    onToggleSave: _toggleSave,
                   )
                 else if (isHistoryGrid)
                   FavoriteGrid(

@@ -1,5 +1,4 @@
 import 'package:Netpilem/screens/detail_screen.dart';
-import 'package:Netpilem/screens/favorite_screen.dart';
 import 'package:Netpilem/screens/home_screen.dart';
 import 'package:Netpilem/screens/profile_screen.dart';
 import 'package:Netpilem/screens/search_screen.dart';
