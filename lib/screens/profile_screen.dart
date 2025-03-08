@@ -1,6 +1,7 @@
 import 'package:Netpilem/models/movie.dart';
 import 'package:Netpilem/screens/detail_screen.dart';
 import 'package:Netpilem/screens/widgets/favorite_grid.dart';
+import 'package:Netpilem/screens/widgets/history_grid.dart';
 import 'package:Netpilem/screens/widgets/save_grid.dart';
 import 'package:Netpilem/services/api_services.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   List<Movie> favoriteMovies = [];
   List<Movie> saveMovies = [];
+  List<Movie> historyMovies = [];
+  Map<int, bool> historyStatus = {};
   final ApiServices apiServices = ApiServices();
   Map<int, bool> favoriteStatus = {};
   Map<int, bool> saveStatus = {};
@@ -30,6 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     _loadFavoriteMovies();
     _loadSaveMovies();
+    _loadHistoryMovies();
     isHistoryGrid = true;
   }
 
@@ -105,6 +109,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  Future<void> _loadHistoryMovies() async {
+    await SharedPrefHelper.init();
+    List<int> historyIds = await SharedPrefHelper.getAllHistoryMovies();
+    if (historyIds.isEmpty) {
+      setState(() {
+        historyMovies = [];
+      });
+      return;
+    }
+
+    List<Map<String, dynamic>> movieData = await apiServices.getAllMovie();
+    List<Movie> movies = movieData.map((json) => Movie.fromJson(json)).toList();
+
+    List<Movie> historyList =
+        movies.where((movie) => historyIds.contains(movie.id)).toList();
+
+    setState(() {
+      historyMovies = historyList;
+    });
+  }
+
   void _setActiveGrid(String gridType) {
     setState(() {
       isHistoryGrid = gridType == "history";
@@ -138,6 +163,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         await SharedPrefHelper.setSaveStatus(key, false);
       }
       _loadSaveMovies();
+    } else if (isHistoryGrid) {
+      await SharedPrefHelper.clearHistory(); // Hapus semua history dari SharedPreferences
+      setState(() {
+        historyMovies.clear();
+        historyStatus.clear();
+      });
+       await Future.delayed(Duration(milliseconds: 50));
+       await _loadHistoryMovies();
     }
   }
 
@@ -360,10 +393,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onToggleSave: _toggleSave,
                   )
                 else if (isHistoryGrid)
-                  FavoriteGrid(
-                    favoriteMovies: favoriteMovies,
-                    favoriteStatus: favoriteStatus,
-                    onToggleFavorite: _toggleFavorite,
+                  HistoryGrid(
+                    historyMovies: historyMovies,
+                    historyStatus: historyStatus,
+                    onToggleHistory: (id) {},
                   ),
                 //hilang
                 Padding(padding: EdgeInsets.only(top: 20)),

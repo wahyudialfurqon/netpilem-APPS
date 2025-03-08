@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:core';
 
 import 'package:Netpilem/models/movie.dart';
@@ -108,17 +109,52 @@ class SharedPrefHelper {
     List<String>? movieList = _preferences?.getStringList('saved_movies');
     return movieList?.map(int.parse).toList() ?? [];
   }
+
+  static Future<void> addToHistory(Movie movie) async {
+    _preferences = await SharedPreferences.getInstance();
+    List<String>? historyList =
+        _preferences?.getStringList('history_movies') ?? [];
+
+    // Tambahkan hanya jika belum ada di history
+    if (!historyList.contains(movie.id.toString())) {
+      historyList.add(movie.id.toString());
+      await _preferences?.setStringList('history_movies', historyList);
+      await _preferences?.setString('history_${movie.id}', movie.title);
+    }
+  }
+
+  static List<int> getAllHistoryMovies() {
+    List<String>? historyList = _preferences?.getStringList('history_movies');
+    return historyList?.map(int.parse).toList() ?? [];
+  }
+
+  static Future<void> clearHistory() async {
+    _preferences = await SharedPreferences.getInstance();
+    List<String>? historyList = _preferences?.getStringList('history_movies');
+
+    if (historyList != null) {
+      for (var id in historyList) {
+        await _preferences?.remove('history_$id');
+      }
+    }
+
+    await _preferences?.remove('history_movies');
+  }
 }
 
 class _DetailScreensState extends State<DetailScreens> {
   bool _isFavorite = false;
   bool _isSave = false;
   bool isOpened = true;
+  Timer? _viewTimer;
 
   void initState() {
     super.initState();
     _loadFavoriteStatus();
     _loadSaveStatus();
+     _viewTimer = Timer(Duration(seconds: 5), () {
+      SharedPrefHelper.addToHistory(widget.movie);
+    });
   }
 
   void _loadFavoriteStatus() async {
@@ -128,7 +164,8 @@ class _DetailScreensState extends State<DetailScreens> {
       _isFavorite = status;
     });
   }
-   void _loadSaveStatus() async {
+
+  void _loadSaveStatus() async {
     await SharedPrefHelper.init();
     bool status = SharedPrefHelper.getSaveStatus(widget.movie.id);
     setState(() {
@@ -156,7 +193,11 @@ class _DetailScreensState extends State<DetailScreens> {
     _loadFavoriteStatus();
     _loadSaveStatus();
   }
-
+  @override
+  void dispose(){
+    _viewTimer?.cancel();
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
