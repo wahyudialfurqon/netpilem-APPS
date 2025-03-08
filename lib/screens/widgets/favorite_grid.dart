@@ -45,7 +45,7 @@ class FavoriteGrid extends StatelessWidget {
                       ),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 0, right: 20, left: 20),
+                      padding: const EdgeInsets.only(top: 20, right: 20, left: 20),
                       child: AspectRatio(
                         aspectRatio: 200 / 260,
                         child: Stack(
@@ -60,14 +60,14 @@ class FavoriteGrid extends StatelessWidget {
                               ),
                             ),
                             Positioned(
-                              bottom: 30,
+                              bottom: 15,
                               right: 0,
                               child: IconButton(
                                 icon: Icon(
                                   favoriteStatus[movie.id] ?? true
                                       ? Icons.favorite
                                       : Icons.favorite_border,
-                                  color: const Color.fromARGB(255, 255, 17, 0),
+                                  color: Colors.red,
                                   size: 30,
                                 ),
                                 onPressed: () => onToggleFavorite(movie.id),

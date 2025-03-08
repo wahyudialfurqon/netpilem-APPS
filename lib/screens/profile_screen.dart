@@ -18,6 +18,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool isFavoriteGrid = false;
   bool isSaveGrid = false;
   bool isHistoryGrid = false;
+  bool _isFavorite = false;
 
   @override
   void initState() {
@@ -38,7 +39,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadFavoriteMovies() async {
+    await SharedPrefHelper.init();
     List<int> favoriteIds = await SharedPrefHelper.getAllFavoriteMovies();
+    if (favoriteIds.isEmpty) {
+      setState(() {
+        _isFavorite = false;
+        favoriteMovies = [];
+      });
+      return;
+    }
     List<Map<String, dynamic>> movieData =
         await apiServices.getAllMovie(); // Ambil semua film dari API
     List<Movie> movies =
@@ -55,13 +64,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
- void _setActiveGrid(String gridType){
-  setState((){
-    isHistoryGrid = gridType == "history";
-    isFavoriteGrid = gridType == "favorite";
-    isSaveGrid = gridType == "save";
-  });
- }
+  void _setActiveGrid(String gridType) {
+    setState(() {
+      isHistoryGrid = gridType == "history";
+      isFavoriteGrid = gridType == "favorite";
+      isSaveGrid = gridType == "save";
+    });
+  }
+
+  Future<void> _clearAllMovies() async {
+    await SharedPrefHelper.clearAllFavorites();
+    setState(() {
+      _isFavorite = false;
+      favoriteMovies.clear(); // Kosongkan daftar favorit di tampilan
+      favoriteStatus.clear(); // Bersihkan status favorit
+    });
+    await Future.delayed(Duration(milliseconds: 100));
+    for (var key in favoriteStatus.keys) {
+      await SharedPrefHelper.setFavoriteStatus(key, false);
+    }
+
+    _loadFavoriteMovies(); // Reload daftar favorit
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -211,7 +235,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     IconButton(
                       icon: Icon(
                         Icons.history,
-                        color: isHistoryGrid ? const Color.fromARGB(255, 255, 17, 0) : Colors.white,
+                        color:
+                            isHistoryGrid
+                                ? const Color.fromARGB(255, 255, 17, 0)
+                                : Colors.white,
                       ),
                       onPressed: () => _setActiveGrid("history"),
                     ),
@@ -219,15 +246,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     IconButton(
                       icon: Icon(
                         Icons.favorite,
-                        color: isFavoriteGrid ? const Color.fromARGB(255, 255, 17, 0) : Colors.white,
+                        color:
+                            isFavoriteGrid
+                                ? const Color.fromARGB(255, 255, 17, 0)
+                                : Colors.white,
                       ),
                       onPressed: () => _setActiveGrid("favorite"),
                     ),
                     const SizedBox(width: 120),
-                     IconButton(
+                    IconButton(
                       icon: Icon(
                         Icons.bookmark,
-                        color: isSaveGrid ? const Color.fromARGB(255, 255, 17, 0) : Colors.white,
+                        color:
+                            isSaveGrid
+                                ? const Color.fromARGB(255, 255, 17, 0)
+                                : Colors.white,
                       ),
                       onPressed: () => _setActiveGrid("save"),
                     ),
@@ -244,12 +277,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(
-                        'Clear All',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      GestureDetector(
+                        onTap: _clearAllMovies,
+                        child: Text(
+                          'Clear All',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ],

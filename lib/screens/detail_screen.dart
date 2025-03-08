@@ -16,12 +16,45 @@ class DetailScreens extends StatefulWidget {
 class SharedPrefHelper {
   static SharedPreferences? _preferences;
 
+  static Future<void> clearAllFavorites() async {
+    _preferences = await SharedPreferences.getInstance();
+    List<String>? movieList = _preferences?.getStringList('favorite_movies');
+
+    if (movieList != null) {
+      for (var id in movieList) {
+        await _preferences?.remove('favorite_$id');
+      }
+    }
+
+    // Hapus daftar utama favorite_movies
+    await _preferences?.remove('favorite_movies');
+  }
+
   static Future<void> init() async {
     _preferences = await SharedPreferences.getInstance();
   }
 
   static Future<void> setFavoriteStatus(int movieId, bool isFavorite) async {
     await _preferences?.setBool('favorite_$movieId', isFavorite);
+    // Simpan ulang daftar favorit ke SharedPreferences
+    List<int> favoriteMovies = getAllFavoriteMovies();
+    if (isFavorite) {
+      if (!favoriteMovies.contains(movieId)) {
+        favoriteMovies.add(movieId);
+      }
+    } else {
+      favoriteMovies.remove(movieId);
+    }
+
+    // Jika tidak ada film favorit, hapus key-nya
+    if (favoriteMovies.isEmpty) {
+      await _preferences?.remove('favorite_movies');
+    } else {
+      await _preferences?.setStringList(
+        'favorite_movies',
+        favoriteMovies.map((id) => id.toString()).toList(),
+      );
+    }
   }
 
   static bool getFavoriteStatus(int movieId) {
@@ -29,18 +62,8 @@ class SharedPrefHelper {
   }
 
   static List<int> getAllFavoriteMovies() {
-    final allKeys = _preferences?.getKeys() ?? {};
-    List<int> favoriteMovies = [];
-    for (String key in allKeys) {
-      if (key.startsWith('favorite_')) {
-        bool _isFavorite = _preferences?.getBool(key) ?? false;
-        if (_isFavorite) {
-          int movieId = int.parse(key.split('_')[1]);
-          favoriteMovies.add(movieId);
-        }
-      }
-    }
-    return favoriteMovies;
+    List<String>? movieList = _preferences?.getStringList('favorite_movies');
+    return movieList?.map(int.parse).toList() ?? [];
   }
 }
 
@@ -52,9 +75,11 @@ class _DetailScreensState extends State<DetailScreens> {
     _loadFavoriteStatus();
   }
 
-  void _loadFavoriteStatus() {
+  void _loadFavoriteStatus() async {
+    await SharedPrefHelper.init();
+    bool status = SharedPrefHelper.getFavoriteStatus(widget.movie.id);
     setState(() {
-      _isFavorite = SharedPrefHelper.getFavoriteStatus(widget.movie.id);
+      _isFavorite = status;
     });
   }
 
@@ -63,6 +88,12 @@ class _DetailScreensState extends State<DetailScreens> {
       _isFavorite = !_isFavorite;
     });
     await SharedPrefHelper.setFavoriteStatus(widget.movie.id, _isFavorite);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadFavoriteStatus(); 
   }
 
   @override
