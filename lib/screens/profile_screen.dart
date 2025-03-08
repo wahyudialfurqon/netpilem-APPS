@@ -220,9 +220,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   indent: 20, // Jarak dari kiri
                   endIndent: 20, // Jarak dari kanan
                 ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Clear All',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 //
                 //Disini
                 //
+                SizedBox(height: 10),
                 Expanded(
                   child:
                       favoriteMovies.isEmpty
@@ -236,13 +253,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ),
                           )
                           : GridView.builder(
-                            padding: EdgeInsets.symmetric(horizontal: 20),
+                            shrinkWrap: true,
                             gridDelegate:
                                 SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
-                                  crossAxisSpacing: 2,
-                                  mainAxisSpacing: 2,
-                                  childAspectRatio: 0.7,
+                                  childAspectRatio: 0.8,
                                 ),
                             itemCount: favoriteMovies.length,
                             itemBuilder: (context, index) {
@@ -258,49 +273,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   DetailScreens(movie: movie),
                                         ),
                                       ),
-                                  child: SizedBox(
-                                    height: 260,
-                                    width: 200,
-                                    child: Stack(
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 20,
-                                          ),
-                                          child: SizedBox(
-                                            child: ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              child: Image.network(
-                                                'https://image.tmdb.org/t/p/w500/${movie.posterPath}',
-                                                height: 260,
-                                                width: 200,
-                                                fit: BoxFit.cover,
-                                              ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(top: 0, right:  20, left: 20),
+                                    child: AspectRatio(
+                                      aspectRatio: 200 / 260, 
+                                      child: Stack(
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              10,
+                                            ),
+                                            child: Image.network(
+                                              'https://image.tmdb.org/t/p/w500/${movie.posterPath}',
+                                              width: 200,
+                                              height: 260,
+                                              fit: BoxFit.cover,
                                             ),
                                           ),
-                                        ),
-                                        Positioned(
-                                          bottom: 20,
-                                          right: 10,
-                                          child: IconButton(
-                                            icon: Icon(
-                                              favoriteStatus[movie.id] ?? true
-                                                  ? Icons.favorite
-                                                  : Icons.favorite_border,
-                                              color: const Color.fromARGB(
-                                                255,
-                                                255,
-                                                17,
-                                                0,
+                                          Positioned(
+                                            bottom: 35, 
+                                            right: 0,
+                                            child: IconButton(
+                                              icon: Icon(
+                                                favoriteStatus[movie.id] ?? true
+                                                    ? Icons.favorite
+                                                    : Icons.favorite_border,
+                                                color: Colors.red,
+                                                size: 30,
                                               ),
-                                              size: 30,
+                                              onPressed:
+                                                  () => _toggleFavorite(movie.id),
                                             ),
-                                            onPressed:
-                                                () => _toggleFavorite(movie.id),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -308,9 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             },
                           ),
                 ),
-                Padding(
-                  padding: EdgeInsets.only(top: 80),
-                )
+                Padding(padding: EdgeInsets.only(top: 20)),
               ],
             ),
           ),
