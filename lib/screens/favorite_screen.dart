@@ -103,8 +103,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 20),
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 2,
+                  mainAxisSpacing: 2,
                   childAspectRatio: 0.7,
                 ),
                 itemCount: favoriteMovies.length,

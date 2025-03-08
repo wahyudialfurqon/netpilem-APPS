@@ -45,7 +45,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screen = [
     const HomeScreen(),
     const SearchScreen(),
-    const FavoriteScreen(),
+    const ProfileScreen(),
   ];
 
   void _onItemTapped(int index){
@@ -75,8 +75,8 @@ class _MainScreenState extends State<MainScreen> {
           label: 'Search',
           ),
           BottomNavigationBarItem(icon:
-          Icon(Icons.favorite),
-          label: 'Favorites',
+          Icon(Icons.person),
+          label: 'Profile',
           ),
         ],
       ),

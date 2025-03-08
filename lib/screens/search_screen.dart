@@ -53,6 +53,12 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
+  void _clearSearch() {
+    setState(() {
+      _searchController.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -113,9 +119,15 @@ class _SearchScreenState extends State<SearchScreen> {
                   borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(color: Colors.white),
                 ),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.search, color: const Color.fromARGB(255, 255, 17, 0)),
-                  onPressed: _searchMovies,
+                suffixIcon: Visibility(
+                  visible: _searchController.text.isNotEmpty,
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.clear,
+                      color: const Color.fromARGB(255, 255, 17, 0),
+                    ),
+                    onPressed: _clearSearch,
+                  ),
                 ),
               ),
             ),
