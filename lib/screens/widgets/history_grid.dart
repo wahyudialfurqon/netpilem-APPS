@@ -22,15 +22,25 @@ class HistoryGrid extends StatefulWidget {
 class _HistoryGridState extends State<HistoryGrid> {
   List<int> historyMovies = [];
 
-  Future<void> _clearAllHistoryMovies() async {
+  Future<void> _removeMovieFromHistory(int id) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('history_movies'); // Hapus semua data history
+
+    // Ambil list history dari SharedPreferences
+    List<String>? historyList = prefs.getStringList('history_movies');
+
+    if (historyList != null) {
+      historyList.remove(id.toString()); // Hapus film berdasarkan ID
+      await prefs.setStringList(
+        'history_movies',
+        historyList,
+      ); // Simpan kembali
+    }
 
     setState(() {
-      widget.historyMovies.clear();
-      historyMovies.clear(); // Kosongkan list di UI
+      widget.historyMovies.removeWhere((movie) => movie.id == id);
     });
   }
+
   @override
   void initState() {
     super.initState();
@@ -113,7 +123,10 @@ class _HistoryGridState extends State<HistoryGrid> {
                                     ),
                                     size: 30,
                                   ),
-                                  onPressed:_clearAllHistoryMovies,
+                                  onPressed: () {
+                                    _removeMovieFromHistory(movie.id);
+                                    widget.onToggleHistory(movie.id);
+                                  },
                                 ),
                               ),
                             ],

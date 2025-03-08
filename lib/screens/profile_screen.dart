@@ -130,6 +130,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
   }
 
+  void _removeFromHistory(int movieId) {
+    setState(() {
+      historyMovies.removeWhere((movie) => movie.id == movieId);
+    });
+  }
+
   void _setActiveGrid(String gridType) {
     setState(() {
       isHistoryGrid = gridType == "history";
@@ -169,8 +175,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         historyMovies.clear();
         historyStatus.clear();
       });
-       await Future.delayed(Duration(milliseconds: 50));
-       await _loadHistoryMovies();
+      _loadHistoryMovies();
     }
   }
 
@@ -251,7 +256,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Column(
                       children: [
                         Text(
-                          '1000',
+                          '${historyMovies.length}',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -259,7 +264,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         Text(
-                          'View',
+                          'History',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -273,7 +278,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          '1000',
+                          '${favoriteMovies.length}',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -281,7 +286,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         Text(
-                          'Favorite',
+                          'Liked',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -295,7 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          '1000',
+                          '${saveMovies.length}',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -303,7 +308,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                         ),
                         Text(
-                          'Save',
+                          'Saved',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -369,7 +374,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Text(
                           'Clear All',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -396,7 +401,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   HistoryGrid(
                     historyMovies: historyMovies,
                     historyStatus: historyStatus,
-                    onToggleHistory: (id) {},
+                    onToggleHistory: _removeFromHistory,
                   ),
                 //hilang
                 Padding(padding: EdgeInsets.only(top: 20)),
